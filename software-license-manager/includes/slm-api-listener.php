@@ -7,6 +7,7 @@
  * 2) slm_activate
  * 3) slm_deactivate
  * 4) slm_check
+ * 5) slm_update_version
  */
 
 class SLM_API_Listener {
@@ -29,6 +30,7 @@ class SLM_API_Listener {
 			$this->activation_api_listener();
 			$this->deactivation_api_listener();
 			$this->check_api_listener();
+			$this->update_version_api_listener();
 		}
 	}
 
@@ -116,6 +118,7 @@ class SLM_API_Listener {
 			$fields['lic_key']           = SLM_Utility::sanitize_strip_trim_slm_text( $_REQUEST['license_key'] );
 			$fields['registered_domain'] = isset($_REQUEST['registered_domain']) ? trim( wp_unslash( sanitize_text_field( $_REQUEST['registered_domain'] ) ) ) : '';
 			$fields['item_reference']    = isset($_REQUEST['item_reference']) ? trim( sanitize_text_field( $_REQUEST['item_reference'] ) ) : '';
+			$fields['version']           = isset($_REQUEST['version']) ? sanitize_text_field( $_REQUEST['version'] ) : '';
 			$slm_debug_logger->log_debug( 'License key: ' . $fields['lic_key'] . ' Domain: ' . $fields['registered_domain'] );
 
 			global $wpdb;
@@ -318,6 +321,131 @@ class SLM_API_Listener {
 					'result'     => 'error',
 					'message'    => 'Invalid license key',
 					'error_code' => SLM_Error_Codes::LICENSE_INVALID,
+				) );
+				SLM_API_Utility::output_api_response( $args );
+			}
+		}
+	}
+
+	/*
+	 * Update version API listener
+	 * Query Parameters
+	 * 1) slm_action = slm_update_version
+	 * 2) secret_key
+	 * 3) license_key
+	 * 4) registered_domain
+	 * 5) item_reference (optional - if not provided, will update all domains for that license)
+	 * 6) version (required - the version to update)
+	 */
+	function update_version_api_listener() {
+		if ( isset( $_REQUEST['slm_action'] ) && trim( $_REQUEST['slm_action'] ) == 'slm_update_version' ) {
+			//Handle the version update API query
+			global $slm_debug_logger;
+
+			SLM_API_Utility::verify_secret_key(); //Verify the secret key first.
+
+			$slm_debug_logger->log_debug( 'API - version update (slm_update_version) request received.' );
+
+			//Action hook
+			do_action( 'slm_api_listener_slm_update_version' );
+
+			// Validate required parameters
+			if ( empty( $_REQUEST['license_key'] ) ) {
+				$args = ( array(
+					'result'     => 'error',
+					'message'    => 'License key is missing',
+					'error_code' => SLM_Error_Codes::LICENSE_INVALID,
+				) );
+				SLM_API_Utility::output_api_response( $args );
+			}
+
+			if ( empty( $_REQUEST['registered_domain'] ) ) {
+				$args = ( array(
+					'result'     => 'error',
+					'message'    => 'Registered domain is missing',
+					'error_code' => SLM_Error_Codes::DOMAIN_MISSING,
+				) );
+				SLM_API_Utility::output_api_response( $args );
+			}
+
+			if ( empty( $_REQUEST['version'] ) ) {
+				$args = ( array(
+					'result'     => 'error',
+					'message'    => 'Version parameter is missing',
+					'error_code' => '110',
+				) );
+				SLM_API_Utility::output_api_response( $args );
+			}
+
+			$license_key       = SLM_Utility::sanitize_strip_trim_slm_text( $_REQUEST['license_key'] );
+			$registered_domain = trim( wp_unslash( sanitize_text_field( $_REQUEST['registered_domain'] ) ) );
+			$version           = sanitize_text_field( $_REQUEST['version'] );
+			$item_reference    = isset( $_REQUEST['item_reference'] ) ? trim( sanitize_text_field( $_REQUEST['item_reference'] ) ) : '';
+
+			$slm_debug_logger->log_debug( 'License key: ' . $license_key . ' Domain: ' . $registered_domain . ' Version: ' . $version );
+
+			global $wpdb;
+			$tbl_name  = SLM_TBL_LICENSE_KEYS;
+			$reg_table = SLM_TBL_LIC_DOMAIN;
+
+			// First check if the license key exists
+			$sql_prep = $wpdb->prepare( "SELECT * FROM $tbl_name WHERE license_key = %s", $license_key );
+			$retLic   = $wpdb->get_row( $sql_prep, OBJECT );
+
+			if ( ! $retLic ) {
+				$args = ( array(
+					'result'     => 'error',
+					'message'    => 'Invalid license key',
+					'error_code' => SLM_Error_Codes::LICENSE_INVALID,
+				) );
+				SLM_API_Utility::output_api_response( $args );
+			}
+
+			// Check if the domain is registered for this license
+			$where_clause = array(
+				'lic_key'           => $license_key,
+				'registered_domain' => $registered_domain,
+			);
+
+			// Add item_reference to where clause if provided
+			if ( ! empty( $item_reference ) ) {
+				$where_clause['item_reference'] = $item_reference;
+			}
+
+			$sql_prep    = $wpdb->prepare(
+				"SELECT * FROM $reg_table WHERE lic_key = %s AND registered_domain = %s" .
+				( ! empty( $item_reference ) ? " AND item_reference = %s" : "" ),
+				! empty( $item_reference ) ? array( $license_key, $registered_domain, $item_reference ) : array( $license_key, $registered_domain )
+			);
+			$reg_domain = $wpdb->get_row( $sql_prep, OBJECT );
+
+			if ( ! $reg_domain ) {
+				$args = ( array(
+					'result'     => 'error',
+					'message'    => 'Domain not registered for this license key',
+					'error_code' => SLM_Error_Codes::DOMAIN_MISSING,
+				) );
+				SLM_API_Utility::output_api_response( $args );
+			}
+
+			// Update the version
+			$data = array( 'version' => $version );
+			$updated = $wpdb->update( $reg_table, $data, $where_clause );
+
+			if ( false === $updated ) {
+				$slm_debug_logger->log_debug( 'Error - failed to update version in the database.' );
+				$args = ( array(
+					'result'     => 'error',
+					'message'    => 'Failed to update version',
+					'error_code' => '111',
+				) );
+				SLM_API_Utility::output_api_response( $args );
+			} else {
+				$slm_debug_logger->log_debug( 'Version updated successfully.' );
+				$args = ( array(
+					'result'  => 'success',
+					'message' => 'Version updated successfully',
+					'version' => $version,
 				) );
 				SLM_API_Utility::output_api_response( $args );
 			}

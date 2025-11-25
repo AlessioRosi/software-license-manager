@@ -252,6 +252,14 @@ function wp_lic_mgr_add_licenses_menu() {
 									<div id="reg_del_msg" style="display: none;"></div>
 									<div class="domain-licenses">
 										<table cellpadding="0" cellspacing="0" class="domain-license-table">
+											<thead>
+												<tr>
+													<th style="width: 15px;"></th>
+													<th style="text-align: left; padding: 8px 10px;">Domain</th>
+													<th style="text-align: left; padding: 8px 10px;">Version</th>
+												</tr>
+											</thead>
+											<tbody>
 											<?php
 											$count = 0;
 											$tpl   = '<a class="slm-remove-domain-btn del" data-domain-id="%s" data-nonce="%s" data-lic-id="' . $id . '" title="' . __( 'Delete domain', 'slm' ) . '" href="#">&times;</a>';
@@ -280,11 +288,13 @@ function wp_lic_mgr_add_licenses_menu() {
 													?>
 													</td>
 													<td><?php echo esc_html( $reg_domain->registered_domain ); ?></td>
+													<td><?php echo ! empty( $reg_domain->version ) ? esc_html( $reg_domain->version ) : '<em>Not reported</em>'; ?></td>
 												</tr>
 												<?php
 												$count++;
 											endforeach;
 											?>
+											</tbody>
 										</table>
 									</div>
 									<?php

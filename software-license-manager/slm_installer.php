@@ -45,6 +45,7 @@ $ld_tbl_sql = 'CREATE TABLE ' . $lic_domain_table . ' (
       lic_key varchar(255) NOT NULL ,
       registered_domain text NOT NULL ,
       item_reference varchar(255) NOT NULL,
+      version varchar(50) NOT NULL default '',
       PRIMARY KEY ( id ),
       KEY `lic_key_id` (`lic_key_id`)
       )' . $charset_collate . ';';
