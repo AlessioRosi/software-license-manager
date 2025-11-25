@@ -39,16 +39,16 @@ $lk_tbl_sql = 'CREATE TABLE ' . $lic_key_table . " (
       )" . $charset_collate . ';';
 dbDelta( $lk_tbl_sql );
 
-$ld_tbl_sql = 'CREATE TABLE ' . $lic_domain_table . ' (
+$ld_tbl_sql = 'CREATE TABLE ' . $lic_domain_table . " (
       id INT NOT NULL AUTO_INCREMENT ,
       lic_key_id INT NOT NULL ,
       lic_key varchar(255) NOT NULL ,
       registered_domain text NOT NULL ,
-      item_reference varchar(255) NOT NULL,
+      item_reference varchar(255) NOT NULL ,
       version varchar(50) NOT NULL default '',
       PRIMARY KEY ( id ),
       KEY `lic_key_id` (`lic_key_id`)
-      )' . $charset_collate . ';';
+      )" . $charset_collate . ';';
 dbDelta( $ld_tbl_sql );
 
 update_option( 'wp_lic_mgr_db_version', WP_LICENSE_MANAGER_DB_VERSION );

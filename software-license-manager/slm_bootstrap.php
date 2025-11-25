@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: Software License Manager
-Version: 4.5.8
-Plugin URI: https://www.tipsandtricks-hq.com/software-license-manager-plugin-for-wordpress
-Author: Tips and Tricks HQ
-Author URI: https://www.tipsandtricks-hq.com/
+Plugin Name: Eraclito Software License Manager
+Version: 6.0.0
+Plugin URI: https://www.eraclito.it
+Author: Eraclito - Alessio Rosi
+Author URI: https://www.eraclito.it
 Description: Software license management solution for your web applications (WordPress plugins, Themes, PHP based membership script etc.)
 */
 
@@ -14,8 +14,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 //Short name/slug "SLM" or "slm"
 
-define( 'WP_LICENSE_MANAGER_VERSION', '4.5.8' );
-define( 'WP_LICENSE_MANAGER_DB_VERSION', '1.7' );
+define( 'WP_LICENSE_MANAGER_VERSION', '6.0.0' );
+define( 'WP_LICENSE_MANAGER_DB_VERSION', '2.0' );
 define( 'WP_LICENSE_MANAGER_FOLDER', dirname( plugin_basename( __FILE__ ) ) );
 define( 'WP_LICENSE_MANAGER_URL', plugins_url( '', __FILE__ ) );
 define( 'WP_LICENSE_MANAGER_PATH', plugin_dir_path( __FILE__ ) );
